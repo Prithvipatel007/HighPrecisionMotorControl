@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := app-template
+PROJECT_NAME := mcpwm_bldc_control_hall_sensor
 
 include $(IDF_PATH)/make/project.mk
 
