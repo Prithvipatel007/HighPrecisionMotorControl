@@ -25,7 +25,7 @@
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_periph.h"
 
-#define INITIAL_DUTY 10.0   //initial duty cycle is 10.0%
+#define INITIAL_DUTY 50.0   //initial duty cycle is 10.0%
 #define MCPWM_GPIO_INIT 0   //select which function to use to initialize gpio signals
 
 #define GPIO_HALL_TEST_SIGNAL 0     //Make this 1 to enable generation of hall sensors test signal on GPIO13, 12, 14
@@ -36,8 +36,8 @@
 #define CAP1_INT_EN BIT(28)  //Capture 1 interrupt bit
 #define CAP2_INT_EN BIT(29)  //Capture 2 interrupt bit
 
-#define GPIO_PWM0A_OUT 15   //Set GPIO 15 as PWM0A
-#define GPIO_PWM0B_OUT 02   //Set GPIO 02 as PWM0B
+#define GPIO_PWM0A_OUT 19   //Set GPIO 15 as PWM0A
+#define GPIO_PWM0B_OUT 18   //Set GPIO 02 as PWM0B
 #define GPIO_PWM1A_OUT 00   //Set GPIO 00 as PWM1A
 #define GPIO_PWM1B_OUT 04   //Set GPIO 04 as PWM1B
 #define GPIO_PWM2A_OUT 16   //Set GPIO 16 as PWM2A
