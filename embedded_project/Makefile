@@ -3,7 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := mcpwm_brushed_dc_control
+PROJECT_NAME := sample_project
 
 include $(IDF_PATH)/make/project.mk
-
