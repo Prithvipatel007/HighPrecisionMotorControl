@@ -42,18 +42,22 @@ static const char *TAG = "Simple_DC_Motor_Control";
 
 xQueueHandle pcnt_evt_queue;   // A queue to handle pulse counter events
 
-int previous_value = 0;
-int Current_value = 0;
-int wheel_pulse_count = 0;
-float current_rpm_value = 0;
-float init_duty = 30.0;
-float previous_duty = 0.0;
-float current_duty = 0.0;
-float filtered_duty = 0.0;
-float error = 0.0;
-float Integral_value = 0.0;
-float control_value = 0.0;
-float Derivative = 0.0;
+int previous_value = 0;       // previous pulse counts
+int Current_value = 0;        // current pulse counts
+int wheel_pulse_count = 0;    // pulse counts in 1 second
+float current_rpm_value = 0;  // current speed in rpm
+float previous_duty = 0.0;    // previous duty cycle for PID
+
+float current_duty = 0.0;     // Current duty cycle for PID
+float filtered_duty = 0.0;    // duty after applying PID
+float error = 0.0;            // error in duty cycle
+float Integral_value = 0.0;   // changes in Integral Value
+float control_value = 0.0;    // Changes in control value
+float Derivative = 0.0;       // changes in derivative value
+bool stop_motor = false;      // flag to stop motot
+
+float init_duty = 30.0;       // initial duty cycle
+int revtotake = 10;
 
 /* A sample structure to pass events from the PCNT
  * interrupt handler to the main program.
@@ -255,7 +259,7 @@ static void mcpwm_example_gpio_initialize(void){
   Motor moves in forward direction, with duty cycle = duty %
 */
 static void brushed_motor_forward(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num , float duty_cycle){
-  printf("Turing motor forward... \n");
+  /*printf("Turing motor forward... \n");*/
   mcpwm_set_signal_low(mcpwm_num, timer_num, MCPWM_OPR_B);
   mcpwm_set_duty(mcpwm_num, timer_num, MCPWM_OPR_A, duty_cycle);
   mcpwm_set_duty_type(mcpwm_num, timer_num, MCPWM_OPR_A, MCPWM_DUTY_MODE_0); // call this each time, if operator was previously in low/high state
@@ -265,19 +269,22 @@ static void brushed_motor_forward(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_nu
   Motor moves in backward direction, with duty cycle = duty %
 */
 static void brushed_motor_backward(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num , float duty_cycle){
-  printf("Turing motor backward... \n");
+  /*printf("Turing motor backward... \n");*/
   mcpwm_set_signal_low(mcpwm_num, timer_num, MCPWM_OPR_A);
   mcpwm_set_duty(mcpwm_num, timer_num, MCPWM_OPR_B, duty_cycle);
   mcpwm_set_duty_type(mcpwm_num, timer_num, MCPWM_OPR_B, MCPWM_DUTY_MODE_0); // call this each time, if operator was previously in low/high state
 }
 
 static void brushed_motor_stop(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num){
-  printf("Motor Stopped \n");
+  //printf("Motor Stopped \n");
   mcpwm_set_signal_low(mcpwm_num, timer_num, MCPWM_OPR_A);
   mcpwm_set_signal_low(mcpwm_num, timer_num, MCPWM_OPR_B);
 }
 
 static void rotary_encoder_execute(void *arg){
+  int current_position = 0;
+  int previous_position = 0;
+  int step_difference = 0;
   /*
   Rotary Encoder Configuration
   */
@@ -303,16 +310,30 @@ static void rotary_encoder_execute(void *arg){
       rotary_encoder_event_t event = { 0 };
       if (xQueueReceive(event_queue, &event, 1000 / portTICK_PERIOD_MS) == pdTRUE)
       {
-          ESP_LOGI(TAG, "Event: position %d, direction %s", event.state.position,
-                     event.state.direction ? (event.state.direction == ROTARY_ENCODER_DIRECTION_CLOCKWISE ? "clockwise" : "Anti-Clockwise") : "Not set");
+        previous_position = current_position;
+        current_position = event.state.position;
+        step_difference = current_position - previous_position;
+        ESP_LOGI(TAG, "Event: position %d, direction %s, difference %d", event.state.position,
+                     event.state.direction ? (event.state.direction == ROTARY_ENCODER_DIRECTION_CLOCKWISE ? "clockwise" : "Anti-Clockwise") : "Not set",
+                   current_position - previous_position);
+        if(((event.state.position)/ENC_COUNT_REV) >= revtotake && revtotake > 0){
+          printf("stopping motor\n");
+          stop_motor = true;
+        }
+        else if(((event.state.position )/ENC_COUNT_REV) <= revtotake && revtotake < 0){
+          printf("stopping motor\n");
+          stop_motor = true;
+        }
       }
       else
       {
           // Poll current position and direction
           rotary_encoder_state_t state = { 0 };
           ESP_ERROR_CHECK(rotary_encoder_get_state(&info, &state));
-          ESP_LOGI(TAG, "Poll: position %d, direction %s", state.position,
-                   state.direction ? (state.direction == ROTARY_ENCODER_DIRECTION_CLOCKWISE ? "clockwise" : "Anti-Clockwise") : "Not Set");
+          ESP_LOGI(TAG, "Poll: position %d, direction %s, , difference %d", state.position,
+                   state.direction ? (state.direction == ROTARY_ENCODER_DIRECTION_CLOCKWISE ? "clockwise" : "Anti-Clockwise") : "Not Set",
+                 current_position - previous_position);
+
 
           // Reset the device
           if (RESET_AT && (state.position >= RESET_AT || state.position <= -RESET_AT))
@@ -346,8 +367,16 @@ static void mcpwm_execute(void *arg){
 
   while(1){
     // Move Clockwise
-    if(filtered_duty == 0.0){
-      brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
+    if(stop_motor == true){
+      brushed_motor_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    }
+    else if(filtered_duty == 0.0){
+      if(init_duty > 0){  // positive duty cycle
+        brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
+      }
+      else if(init_duty < 0){
+        brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
+      }
     }
     else{
       brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, filtered_duty);
@@ -373,7 +402,7 @@ void app_main(void)
 {
   printf("Testing brushed motor... \n");
   xTaskCreate(mcpwm_execute, "mcpwm_execute", 4096, NULL, 5, NULL);
-  //xTaskCreate(rotary_encoder_execute, "rotary_encoder_execute", 4096, NULL, 5, NULL);
+  xTaskCreate(rotary_encoder_execute, "rotary_encoder_execute", 4096, NULL, 2, NULL);
   xTaskCreate(pulse_counter_execute, "pulse_counter_execute", 4096, NULL, 5, NULL);
   xTaskCreate(PID_execute, "PID_execute", 4096, NULL, 10, NULL);
 }
