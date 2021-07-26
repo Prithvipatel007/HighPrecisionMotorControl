@@ -374,26 +374,19 @@ static void mcpwm_execute(void *arg){
       if(init_duty > 0){  // positive duty cycle
         brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
       }
-      else if(init_duty < 0){
+      else if(init_duty < 0){ // negative duty cycle
         brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
       }
     }
     else{
-      brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, filtered_duty);
+      if(filtered_duty > 0){  // positive duty cycle
+        brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, filtered_duty);
+      }
+      else if(filtered_duty < 0){ // negative duty cycle
+        brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, filtered_duty);
+      }
     }
     vTaskDelay(1000/portTICK_RATE_MS);
-    /*
-    //Stopped
-    brushed_motor_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
-    vTaskDelay(2000/portTICK_RATE_MS);
-
-    // Move Anti-Clockwise
-    brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, 10.0);
-    vTaskDelay(2000/portTICK_RATE_MS);
-
-    // Stopped
-    brushed_motor_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
-    vTaskDelay(2000/portTICK_RATE_MS);*/
   }
 }
 
