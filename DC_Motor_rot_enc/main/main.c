@@ -46,7 +46,7 @@ int previous_value = 0;
 int Current_value = 0;
 int wheel_pulse_count = 0;
 float current_rpm_value = 0;
-float init_duty = 100.0;
+float init_duty = 30.0;
 float previous_duty = 0.0;
 float current_duty = 0.0;
 float filtered_duty = 0.0;
@@ -152,6 +152,7 @@ static void pcnt_configuration(int unit)
   pcnt_counter_resume(unit);
 }
 
+// Execute the pusle counter to count the no. of ticks in 1 sec
 static void pulse_counter_execute(void *arg){
   int pcnt_unit = PCNT_UNIT_0;
 
@@ -214,6 +215,7 @@ static void pulse_counter_execute(void *arg){
   }
 }
 
+// PID control loop
 static void PID_execute(void *args){
   while(1){
     error = init_duty - current_duty;
