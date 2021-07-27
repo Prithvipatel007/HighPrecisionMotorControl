@@ -41,7 +41,9 @@ static const char *TAG = "Simple_DC_Motor_Control";
 #define MAX_CONTROL_VALUE 100
 
 xQueueHandle pcnt_evt_queue;   // A queue to handle pulse counter events
-
+/*
+  Do Not Change these Parameters
+*/
 int previous_value = 0;       // previous pulse counts
 int Current_value = 0;        // current pulse counts
 int wheel_pulse_count = 0;    // pulse counts in 1 second
@@ -56,8 +58,11 @@ float control_value = 0.0;    // Changes in control value
 float Derivative = 0.0;       // changes in derivative value
 bool stop_motor = false;      // flag to stop motot
 
+/*
+  Change these parameters according to your needs
+*/
 float init_duty = 30.0;       // initial duty cycle
-int revtotake = 10;
+int revtotake = 10;           // revolutions you want to take
 
 /* A sample structure to pass events from the PCNT
  * interrupt handler to the main program.
@@ -372,18 +377,18 @@ static void mcpwm_execute(void *arg){
     }
     else if(filtered_duty == 0.0){
       if(init_duty > 0){  // positive duty cycle
-        brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
+        brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, abs(init_duty));
       }
       else if(init_duty < 0){ // negative duty cycle
-        brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, init_duty);
+        brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, abs(init_duty));
       }
     }
     else{
       if(filtered_duty > 0){  // positive duty cycle
-        brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, filtered_duty);
+        brushed_motor_forward(MCPWM_UNIT_0, MCPWM_TIMER_0, abs(filtered_duty));
       }
       else if(filtered_duty < 0){ // negative duty cycle
-        brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, filtered_duty);
+        brushed_motor_backward(MCPWM_UNIT_0, MCPWM_TIMER_0, abs(filtered_duty));
       }
     }
     vTaskDelay(1000/portTICK_RATE_MS);
