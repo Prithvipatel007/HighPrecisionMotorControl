@@ -3,23 +3,17 @@
 
 # MCPWM brushed dc motor control Example
 
-This example will show you how to use MCPWM module to control brushed dc motor, you need to make connection between ESP32 and motor driver
- 
-This code is tested with L298 motor driver, user needs to make changes according to the driver they use
- 
-Motor first moves forward, then backward and then stops for 2 Secs each countinuously
+The Objective of this project is to control the DC motor with High Precision. This project have been done for the Line following robot. For the motion of the robot, the DC motor has been used. The goal basically is to precisely control the speed of the motor. Thus, this project gives a brief overview of the precise control using control feedback algorithm. For this task, ESP32 is used as the hardware controller and esp-idf framework is used to flash the program into the ESP32.
 
+* GPIO19 is assigned as the enable/input 1 for motor driver
+* GPIO18 is assigned as the enable/input 2 for motor driver
+* GPIO34 is assigned as the enable/input 1 for motor encoder
+* GPIO35 is assigned as the enable/input 2 for motor encoder
 
-## Step 1: Pin assignment
-* GPIO15 is assigned as the enable/input 1 for motor driver
-* GPIO16 is assigned as the enable/input 2 for motor driver
+MCPWM documentation: (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html)
 
+PCNT documentation: (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/pcnt.html)
 
-## Step 2: Connection
-* connect GPIO15 with input 1 of motor driver
-* connect GPIO16 with input 2 of motor driver
+Proper documentation of the project: Look for the documentation folder.
 
-
-## Step 3: Initialize MCPWM
-* You need to set the frequency and duty cycle of MCPWM timer
-* You need to set the MCPWM unit you want to use, and bind the unit with one of the timers
+# Note: PID feedback control loop is used to control the speed of the DC motor and thus control over the revolutions is achieved through rotary encoder.
